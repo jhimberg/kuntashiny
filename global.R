@@ -131,7 +131,7 @@ kartta.animaatio <- function(df, aluejako="pono.3", geo_=geo, color.map="OrRd", 
     geom_polygon_interactive(aes_string(fill=attr, group="group", tooltip="alue"), colour=NA)+
     scale_fill_gradientn(colours= brewer.pal(9,color.map), values = NULL, space = "Lab", na.value = "grey50", 
                          guide = "colourbar") + theme_void() +
-    + theme(legend.title=element_blank()) + ggtitle(title.label) 
+    theme(legend.title=element_blank()) + ggtitle(title.label) 
   return(p)
 }
 
@@ -154,9 +154,6 @@ nvl <- function(a,b) {
   ifelse(is.na(a),b,a)
 }
 
-map.autovarikartta<-function(v) plyr::mapvalues(v,c("Valkoinen","Sininen","Musta","Harmaa",
-                                              NA,"Punainen","Vihreä","Ruskea (beige)","Monivär.","Hopea","Keltainen","Violetti","Oranssi","Turkoosi"),
-                                          c("snow2","blue","black","gray","gray","red","green","brown","red","silver","yellow","purple","organge","cyan"))
 
 map.ikaluokka<-
   function(v) as.numeric(plyr::mapvalues(as.character(v), 
@@ -173,16 +170,6 @@ map.vanhat.kuntanimet<-
   function(v) plyr::mapvalues(v,c("Maarianhamina - Mariehamn","Pedersören kunta","Koski Tl"), 
                         c("Maarianhamina",iconv("Pedersören",to="UTF-8"),"Koski"))
 
-attribute.count <- function(autot, attr="merkki", base="kuntanimi")
-{ n<-group_by_(autot, base) %>% summarise(N=n()) %>% ungroup
-if(!is.na(attr)) {
-  n[[attr]]<-"sum.N"
-  rbind(n,group_by_(autot,base,attr) %>% 
-          summarise(N=n()) %>% ungroup %>% return) }
-else {
-  n[["sum.N"]]<-"sum.N"
-  return(n) }
-}
 
 kuntadata <- mutate(demografia$kunta, kuntanimi=plyr::mapvalues(as.character(kuntanimi),"Koski Tl","Koski")) %>%
   filter(kuntanimi!="KOKO MAA")
