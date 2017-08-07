@@ -10,18 +10,19 @@ function(input, output, session) {
   })
   
   output$karttavideo <- renderImage({
-    g <- kuntadata[c("vuosi", "kuntanimi", input$muuttuja)]
-    names(g) <- c("vuosi","alue","x")
-    g <- filter(g, !is.na(x)) 
-    p <- kartta.animaatio(select(g, x, alue=alue, aika=vuosi), title.label=input$muuttuja, 
-                aluejako=plyr::mapvalues(input$karttatyyppi, 
+    
+    outfile <- tempfile(fileext='.gif')
+    
+    p <- kartta.animaatio(karttaGIFData(), title.label=input$muuttujavideo, 
+                aluejako=plyr::mapvalues(input$karttatyyppivideo, 
                                          karttatyyppi$label, 
                                          karttatyyppi$aluejako, warn_missing = F))
     ani.options(interval=0.5, ani.width=500, ani.height=650)
-    gganimate(p, file="/srv/shiny-server/test2/outfile.gif")
+    gganimate(p, file="outfile.gif")
     
     # Return a list containing the filename
-    list(src = "/srv/shiny-server/test2/outfile.gif",
+    
+    list(src = "outfile.gif",
          contentType = 'image/gif',
          height="800px",
          alt = "Tää on rikki"
@@ -37,6 +38,12 @@ function(input, output, session) {
               aluejako = plyr::mapvalues(input$karttatyyppi, 
                                          karttatyyppi$label, 
                                          karttatyyppi$aluejako, warn_missing = F))})
+  
+  karttaGIFData<-reactive({g <- kuntadata[c("vuosi", "kuntanimi", input$muuttuja)]
+  g <- kuntadata[c("vuosi", "kuntanimi", input$muuttujavideo)]
+  names(g) <- c("aika","alue","x")
+  g <- filter(g, !is.na(x)) 
+  })
   
   output$kartta <- renderggiraph({
     ggiraph(code={print(karttaData())}, 

@@ -24,8 +24,8 @@ navbarPage("Kuntatilastoja",
                       headerPanel('Generoi GIF-video'),
                       sidebarPanel(
                         "Animaation käynnistyminen kestää n. 30 sekuntia!",
-                        selectInput('muuttuja', 'Muuttuja', kunta.stat.vars),
-                                               radioButtons("karttatyyppi", label = "Karttatyyppi",
+                        selectInput('muuttujavideo', 'Muuttuja', kunta.stat.vars),
+                                               radioButtons("karttatyyppivideo", label = "Karttatyyppi",
                                      choices = karttatyyppi$label, selected=karttatyyppi$label[1]),
                         wellPanel("Kartogrammi painottaa kunnan pinta-alaa vuoden 2016 asukasmäärällä")
                       ),
