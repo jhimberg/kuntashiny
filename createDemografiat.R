@@ -1,14 +1,11 @@
-library(plyr)
+
 library(dplyr)
 library(tidyr)
 library(stringr)
-library(reshape2)
 
 library(pxweb)
-library(pxR)
 library(RCurl)
 library(curl)
-
 
 library(rgdal)
 library(gpclib)
@@ -36,8 +33,7 @@ get.geo <-function(data.name="tilastointialueet:kunta4500k_2017",name.ext=".shp"
 
 geo<-list()
 
-## nimet
-## Duukkiksen redusoitu postinumerokattadata
+## Duukkiksen redusoitu postinumerokattadata haettu erikseen
 
 kml.file="Data/Postinumerot 20150102.kml" 
 layer.name <- rgdal::ogrListLayers(kml.file)
@@ -63,11 +59,10 @@ for (y in c("2017"))
                             select(id,long,lat,order,hole,piece,group,vuosi,kuntano,kuntanimi=kunta) %>%
                             mutate(kuntanimi=map.vanhat.kuntanimet(kuntanimi)))
 
-# Kunta
-
+# Vanhat kunnat vuoden 2017 kuntiin; tehty käsin tilastokeskuksen datasta
 kunnat<-read.csv(file="Data/kunnat2017.csv",fileEncoding="MAC",sep=";")
 
-# Kuntien koodausta
+# Kuntien koodaus vanhasta uuteen
 geo$kunta.vanhat2uudet<-merge(select(kunnat,kunta,kunta.old,kuntano.old),
                               select(kunnat,kunta=kunta.old,kuntano=kuntano.old),
                               by="kunta") %>% 
@@ -75,66 +70,91 @@ geo$kunta.vanhat2uudet<-merge(select(kunnat,kunta,kunta.old,kuntano.old),
   mutate(kuntano.old=str_pad(kuntano.old, 3, side="left", pad="0"),
          kuntano=str_pad(kuntano, 3, side="left", pad="0"))
 
-#### Postinumeroaluedatat ja tarkka postinumeroaluekartta
-
 demografia<-list()
 
-v.2017<-read.px(textConnection(getURL("https://pxnet2.stat.fi/PXWeb/Resources/PX/Databases/Kuntien_avainluvut/2017/kuntien_avainluvut_2017_aikasarja.px"))) %>%
-  as.data.frame %>% filter(!grepl("region|maakunta|seutukunta|Kainuu|Ålands landsbyg|Ålands skärgård|Uusimaa|Varsinais-Suomi|Satakunta|Kanta-Häme|Pirkanmaa|Päijät-Häme|Kymenlaakso|Etelä-Karjala|Etelä-Savo|Pohjois-Savo|Pohjois-Karjala|Keski-Suomi|Etelä-Pohjanmaa|Pohjanmaa|Keski-Pohjanmaa|Pohjois-Pohjanmaa|Lappi|Ahvenanmaa - Åland",
-                                  Alue.2017,ignore.case=FALSE)) %>%
-  mutate(Alue.2017=map.vanhat.kuntanimet(Alue.2017), 
-         Tiedot=as.character(Tiedot),
-         Vuosi=as.numeric(as.character((Vuosi)))) %>% 
-  rename(Alue=Alue.2017) %>%
-  filter(.,!(Tiedot %in% c("Väkiluvun muutos edellisestä vuodesta, %")))
+## Kuntadatoja Tilastokeskuksesta
+v.2017 <- 
+  get_pxweb_data(url = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/Kuntien_avainluvut/2017/kuntien_avainluvut_2017_aikasarja.px",
+                 dims = list("Alue 2017" = c('*'),
+                             Tiedot = c('*'),
+                             Vuosi = c('*')),
+                 clean = TRUE) %>%
+  transmute(Alue=as.character(`Alue 2017`), 
+            Tiedot=as.character(Tiedot),
+            Vuosi=as.numeric(as.character((Vuosi))),
+            value=values) %>% 
+  filter(!grepl("region|maakunta|seutukunta|Kainuu|Ålands landsbyg|Ålands skärgård|Uusimaa|Varsinais-Suomi|Satakunta|Kanta-Häme|Pirkanmaa|Päijät-Häme|Kymenlaakso|Etelä-Karjala|Etelä-Savo|Pohjois-Savo|Pohjois-Karjala|Keski-Suomi|Etelä-Pohjanmaa|Pohjanmaa|Keski-Pohjanmaa|Pohjois-Pohjanmaa|Lappi|Ahvenanmaa - Åland",
+                Alue, ignore.case=FALSE)) %>%
+  mutate(Alue=map.vanhat.kuntanimet(Alue))
 
-demografia$kunta<-rbind(v.2017,
-                        read.table(file="Data/kunta.2.csv",sep=";",header=TRUE)) %>% 
-  dcast(Vuosi+Alue ~ Tiedot, fill=NA, value.var="value") %>% 
-  rename(vuosi=Vuosi,kuntanimi=Alue)
+kunta.tunnusluvut.2 <- 
+  get_pxweb_data(url = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/vrm/vaerak/048_vaerak_tau_203.px",
+                 dims = list(Alue = c('*'),
+                             Vuosi = c('*'),
+                             Tunnusluku = c('*')),
+                 clean = TRUE) %>% 
+  transmute(Alue=as.character(Alue), 
+            Tiedot=as.character(Tunnusluku),
+            Vuosi=as.numeric(as.character((Vuosi))),
+            value=values) %>% 
+  filter(!grepl("MANNER|AHVENANMAA|Suomi|vaalipiiri|hovioikeus| kunnat|Ahvenanmaa|FI|Åland|SHP|käräjäoikeus|poliisilaitos|ELY|AVI|reg|virasto|region|maakunta|seutukunta|Kainuu|Ålands landsbyg|Ålands skärgård|Uusimaa|Varsinais-Suomi|Satakunta|Kanta-Häme|Pirkanmaa|Päijät-Häme|Kymenlaakso|Etelä-Karjala|Etelä-Savo|Pohjois-Savo|Pohjois-Karjala|Keski-Suomi|Etelä-Pohjanmaa|Pohjanmaa|Keski-Pohjanmaa|Pohjois-Pohjanmaa|Lappi|Ahvenanmaa - Åland",
+                Alue, ignore.case=FALSE)) %>% 
+  mutate(Alue=map.vanhat.kuntanimet(Alue)) %>% 
+  filter(Tiedot %in% c( 
+    "Väestöllinen huoltosuhde",
+    "Keski-ikä, molemmat sukupuolet", 
+    "Ulkomaalaistaustaisten osuus, %",
+    "Ev.lut kirkkoon kuuluvien osuus, %",
+    "Muihin uskontokuntiin kuuluvien osuus, %",
+    "Uskontokuntiin kuulumattomien osuus, %")
+  )
 
-rm(v.2017)
+demografia$kunta$tunnusluku <- rbind(v.2017, kunta.tunnusluvut.2) %>% 
+  mutate(Tiedot=plyr::mapvalues(Tiedot, "Keski-ikä, molemmat sukupuolet", "Keski-ikä")) %>%
+  spread(., Tiedot, value, fill=NA) %>% 
+  rename(vuosi=Vuosi, kuntanimi=Alue)
 
-# kunnat väkiluku 2016-2017 (helmikuu)
-demografia$kunnat$vakiluku<-
-  rbind(read.px(textConnection(getURL("http://pxnet2.stat.fi/PXWeb/Resources/PX/Databases/StatFin/vrm/vamuu/001_vamuu_tau_107.px"))) %>% as.data.frame %>% mutate(vuosi=2017) ,
-        read.px(textConnection(getURL("http://pxnet2.stat.fi/PXWeb/Resources/PX/Databases/StatFin/vrm/vamuu/005_vamuu_tau_101.px"))) %>% as.data.frame %>% mutate(vuosi=2016)) %>%
-  filter(Sukupuoli=="Sukupuolet yhteensä" & Alue!="KOKO MAA" & Kuukausi!="Yhteensä") %>%
-  rename(kuntanimi=Alue,kuukausi=Kuukausi) %>%
-  mutate(kuntanimi=map.vanhat.kuntanimet(as.character(kuntanimi)),
-         kuukausi=mapvalues(kuukausi,c("Tammikuu","Helmikuu","Maaliskuu","Huhtikuu",
-                                       "Toukokuu","Kesäkuu","Heinäkuu","Elokuu","Syyskuu",
-                                       "Lokakuu","Marraskuu","Joulukuu"),seq(1,12))) %>%
-  transmute(vuosi,kuukausi,kuntanimi,vakiluku=value) %>%
-  mutate(kuukausi=paste0(vuosi,"-",str_pad(kuukausi,2,side="left","0")))
+## Kunnallisvaalit
 
-##
-kuntavaalit.www<-list()
-kuntavaalit<-list()
+vaalit<-list() 
+vaali<-list()
+vaalit[[1]]=list(vaali="kunta2012",osoite="http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/vaa/kvaa/2012_07/920_kvaa_2012_tau_161_fi.px")
+vaalit[[2]]=list(vaali="kunta2017",osoite="http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/vaa/kvaa/2017_07/920_kvaa_2017_tau_161.px")
 
-yrs<-c("2012","2017")
-kuntavaalit.www[[yrs[1]]]<-"http://pxnet2.stat.fi/PXWeb/Resources/PX/Databases/StatFin/vaa/kvaa/2012_07/920_kvaa_2012_tau_161_fi.px"
-kuntavaalit.www[[yrs[2]]]<-"http://pxnet2.stat.fi/PXWeb/Resources/PX/Databases/StatFin/vaa/kvaa/2017_07/920_kvaa_2017_tau_161.px"
-
-for (y in yrs) {
-  kuntavaalit[[y]]<-read.px(textConnection(getURL(kuntavaalit.www[[y]]))) %>% as.data.frame %>% 
-    filter(Puolueiden.kannatus=="Ääniä yhteensä" & Puolue!="Yhteensä" & Sukupuoli=="Kaikki ehdokkaat" & grepl("^[0-9][0-9][0-9]",Alue)) %>% mutate(kuntano=substr(Alue,1,3),kuntanimi=substr(Alue,5,100)) %>% 
-    select(Puolue,value,kuntano,kuntanimi) %>% 
-    dcast(kuntano+kuntanimi ~ Puolue,value.var="value")
-  kuntavaalit[[y]]<-mutate(kuntavaalit[[y]],kuntano=map.kuntano(kuntano)) %>% select(-kuntanimi) %>% 
+for (v in vaalit) {
+  vaali[[v$vaali]] <- 
+    get_pxweb_data(url = v$osoite,
+                   dims = list(Alue = c('*'),
+                               Sukupuoli = c('S'),
+                               Puolue = c('*'),
+                               "Puolueiden kannatus" = c('Sar3')), clean = TRUE) 
+  
+  names(vaali[[v$vaali]])<-gsub(" ","\\.",names(vaali[[v$vaali]]))
+  
+  vaali[[v$vaali]] <- filter(vaali[[v$vaali]], 
+                             Puolueiden.kannatus=="Ääniä yhteensä" & Puolue!="Yhteensä" & Sukupuoli=="Kaikki ehdokkaat" & grepl("^[0-9][0-9][0-9]",Alue)) %>% mutate(kuntano=substr(Alue,1,3),kuntanimi=substr(Alue,5,100)) %>% 
+    select(Puolue, value=values, kuntano, kuntanimi) %>% 
+    spread(.,Puolue,value,fill=0) %>% 
+    mutate(kuntano=map.kuntano(kuntano)) %>% 
+    select(-kuntanimi) %>% 
     group_by(kuntano) %>% 
-    summarise_all(funs(sum)) 
-  kuntavaalit[[y]]$N<-rowSums(select(kuntavaalit[[y]],-kuntano))
+    summarise_all(funs(sum)) %>% 
+    ungroup 
+  
+  
+  vaali[[v$vaali]]$N<-rowSums(select(vaali[[v$vaali]],-kuntano))
 }
 
-demografia$kunnat$vaalit<-kuntavaalit
+demografia$kunta$vaali<-vaali
 
-## 
+#
+#### Postinumeroaluedatat ja tarkka postinumeroaluekartta
 
 paavo<-rbind(get.geo("postialue:pno_tilasto_2017"),
              get.geo("postialue:pno_tilasto_2016"),
              get.geo("postialue:pno_tilasto_2015"))
 
+# Paavo-datojen muutajanimiä jne. muodostettu käsin
 paavo.vars <- read.csv(file="Data/paavo.koodit.txt", 
                        sep=";",
                        fileEncoding="MAC",
@@ -153,6 +173,7 @@ paavo.5<-group_by(paavo,posti_alue,vuosi) %>%
          nimi=iconv(nimi,from="latin1",to="UTF-8")) %>% 
   mutate_if(is.numeric,function(x) ifelse(x==-1,NA,x))
 
+# Painotus väkiluvun mukaan
 wmean<-function(x,y) return(weighted.mean(x,ifelse(is.na(y),0,y),na.rm=T))
 
 paavo.aggr <- function(d,i,attr="pono", vars=paavo.vars)
@@ -179,12 +200,12 @@ paavo.aggr <- function(d,i,attr="pono", vars=paavo.vars)
 
 ### Lasketaan keskiarvot ja summat Paavo datalle pono3 ja pono3
 
-demografia$paavo$data<-rbind(paavo.5,paavo.aggr(paavo.5,3),
-                             paavo.aggr(paavo.5,2),
-                             paavo.aggr(paavo.5,1))
-demografia$paavo$vars<-paavo.vars
+demografia$postinumero$data<-rbind(paavo.5,paavo.aggr(paavo.5,3),
+                                   paavo.aggr(paavo.5,2),
+                                   paavo.aggr(paavo.5,1))
 
-save(file="demografiat.RData", demografia)
-save(file="geografiat.RData", geo)
+demografia$postinumero$vars<-paavo.vars
 
+save(file="demografia.RData", demografia)
+save(file="geografia.RData", geo)
 

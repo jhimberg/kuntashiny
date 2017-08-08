@@ -1,6 +1,19 @@
 
 function(input, output, session) {
   
+  output$koko.maa <-renderPlot({
+    g<-koko.maa[, c("vuosi",input$muuttuja)]
+    names(g)[2]<-"x" 
+    g<- g[!is.na(g$x),]
+    color.limits <- c(min(c(kuntadata[, input$muuttuja], g$x), na.rm=TRUE), max(c(kuntadata[, input$muuttuja],g$x), na.rm=TRUE))
+    vuosi.limits <- c(min(g$vuosi, na.rm=TRUE), max(g$vuosi, na.rm=TRUE))
+    p<-ggplot(g, aes(x=vuosi,y=x))+geom_line()+coord_cartesian(xlim=vuosi.limits)+
+      coord_cartesian(ylim=color.limits)+
+      ggtitle("Koko maan keskiarvo")+
+      ylab(input$muuttuja)
+    p
+  })
+  
   observe({
     updateSliderInput(session, "vuosi", 
                       value=min(kuntadata$vuosi[!is.na(kuntadata[input$muuttuja])]),

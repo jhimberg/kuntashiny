@@ -12,7 +12,10 @@ navbarPage("Kuntatilastoja",
                            sep="", step=1, animate = T),
                radioButtons("karttatyyppi", label = "Karttatyyppi",
                             choices = karttatyyppi$label, selected=karttatyyppi$label[1]),
-               wellPanel("Kartogrammi painottaa kunnan pinta-alaa vuoden 2016 asukasmäärällä")
+               wellPanel("Kartogrammi painottaa kunnan pinta-alaa vuoden 2016 asukasmäärällä"),
+               br(),
+               h3("Koko maan keskiarvo"),
+               plotOutput("koko.maa")
              ),
              mainPanel(
                ggiraphOutput("kartta", height="1200px"),

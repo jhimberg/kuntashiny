@@ -16,12 +16,13 @@ library(animation)
 library(gganimate)
 library(ggiraph)
 
+source("initGeoDemografia.R")
 
-data.directory <- "."
+data.directory <- "Data/"
 
-load(paste(data.directory,"/Data/geografiat.RData", sep=""))
-load(paste(data.directory,"/Data/demografiat.RData", sep=""))
-load(paste(data.directory,"/Data/kunnat.kartogrammi.RData", sep=""))
+load(paste(data.directory, "geografia.RData", sep=""))
+load(paste(data.directory, "demografia.RData", sep=""))
+load(paste(data.directory, "kunnat.kartogrammi.RData", sep=""))
 
 geo$kunta$kartogrammi<-transmute(kunnat.kartogrammi,
                                  id,
@@ -35,48 +36,6 @@ geo$kunta$kartogrammi<-transmute(kunnat.kartogrammi,
                                  kuntanimi=iconv(kuntanimi,to="UTF-8"))
                                  
 rm(kunnat.kartogrammi)
-
-# Kunnat v. 2017
-map.kunta <- function(v) 
-  plyr::mapvalues(as.character(v),as.character(geo$kunta.vanhat2uudet$kuntano.old), 
-            as.character(geo$kunta.vanhat2uudet$kunta)) %>% iconv(.,to="UTF-8")
-
-map.kuntano <- function(v)
-  plyr::mapvalues(as.character(v),as.character(geo$kunta.vanhat2uudet$kuntano.old), 
-            as.character(geo$kunta.vanhat2uudet$kuntano))
-
-#postinumero tai kunta on ahvenanmaalla
-is.ahvenanmaa <-function(v)  ifelse(v %in% c("Sottunga","Föglö", "Kumlinge", "Lumparland", "Sund", 
-                                             "Vårdö", "Hammarland", "Eckerö","Lemland", "Finström", 
-                                             "Geta", "Kökar","Saltvik","Jomala","Brändö","Maarianhamina","Mariehamn") | 
-                                      grepl("^22",v),T,F)
-
-
-# korvataan low-arvoa pienemmät "repvaluella"
-
-limitl<-function(x,low,repvalue){ 
-  x[x<low & !is.na(x)]<-repvalue;
-  return(x);
-}
-
-# korvataan high-arvoa suuremmat "repvaluella"
-limith<-function(x,high, repvalue){ 
-  x[x>high & !is.na(x)]<-repvalue;
-  return(x);
-}
-
-# korvataan ylä- ja alarajalla
-cut.lh <-function(x, limits) {
-  limitl(x,limits[1],limits[1]) %>% 
-    limith(.,limits[2],limits[2]) %>% return
-}
-
-# rajoita ylä- ja alaraja muuttujalla kvantiileihin 
-cut.quantile<- function(df, vars, quantile.limits=c(0.025,0.975)) {
-  for (i in vars) df[[i]] <- cut.lh(df[[i]], quantile(df[[i]],quantile.limits))
-  return(df)}
-
-kunnat.latlong<-read.csv(file=paste(data.directory,"/Data/kunnat_latlong.csv",sep=""),sep="\t")
 
 kartta <- function(df, aluejako="pono.3", title.label=NA, geo_=geo, color.map="OrRd", color.limits=c(NA,NA)) {
   # yhdistää kartan ja datan; plottaa ensimmäisen muuttujan jonka nimi ei ole "alue" 
@@ -135,47 +94,15 @@ kartta.animaatio <- function(df, aluejako="pono.3", geo_=geo, color.map="OrRd", 
   return(p)
 }
 
-# puuttuuko arvo (misvalues) vai ei 
-notmissing<-function(z,misvalues=NA, nomis=NA) {
-  misvalues<-cbind(misvalues,NA);
-  m<-lapply(z[,!(names(z) %in% nomis)], function(x) {!(x %in% misvalues)}) 
-  return(cbind(data.frame(m),z[nomis]))
-}
+kuntadata <- mutate(demografia$kunta$tunnusluku,
+                    kuntanimi=iconv(kuntanimi, to="UTF-8"), 
+                    kuntanimi=map.vanhat.kuntanimet(kuntanimi)) %>%
+  filter(kuntanimi!="KOKO MAA") 
 
-s.tab<-function(rownames, s, sep=" ",N=1) {
-  s<-str_split(s,sep)
-  l<-sapply(s,length)
-  return(data.frame(id=unlist(unname(mapply(function(a,b) rep(a,b), rownames, l))),
-                    word=unname(unlist(s)),
-                    N= unlist(mapply(function(a,b) rep(a,b), N, l))))
-}
+koko.maa <- filter(demografia$kunta$tunnusluku, kuntanimi=="KOKO MAA") 
 
-nvl <- function(a,b) {
-  ifelse(is.na(a),b,a)
-}
-
-
-map.ikaluokka<-
-  function(v) as.numeric(plyr::mapvalues(as.character(v), 
-                                   c("0-4",  "5-9",  "10-14","15-19","20-24",
-                                     "25-29","30-34","35-39","40-44","45-49",
-                                     "50-54","55-59","60-64","65-69","70-74",
-                                     "75-79","80-84","85-89","90-"),
-                                   c(2,       7,      12,    17,      22,
-                                     27,      32,     37,    42,      47,
-                                     52,      57,     62,    67,      72,
-                                     77,      82,     87,    91)))
-
-map.vanhat.kuntanimet<-
-  function(v) plyr::mapvalues(v,c("Maarianhamina - Mariehamn","Pedersören kunta","Koski Tl"), 
-                        c("Maarianhamina",iconv("Pedersören",to="UTF-8"),"Koski"))
-
-
-kuntadata <- mutate(demografia$kunta, kuntanimi=plyr::mapvalues(as.character(kuntanimi),"Koski Tl","Koski")) %>%
-  filter(kuntanimi!="KOKO MAA")
-
-kunta.stat.vars <- names(select(demografia$kunta,-vuosi,-kuntanimi))
-vuodet <- unique(demografia$kunta$vuosi)
+kunta.stat.vars <- names(select(demografia$kunta$tunnusluku,-vuosi,-kuntanimi))
+vuodet <- unique(demografia$kunta$tunnusluku$vuosi)
 karttatyyppi=list(label=c("tavallinen","kartogrammi"), 
                   aluejako=c("kuntanimi","kartogrammi.kuntanimi"))
 
