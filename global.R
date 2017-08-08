@@ -37,7 +37,7 @@ geo$kunta$kartogrammi<-transmute(kunnat.kartogrammi,
                                  
 rm(kunnat.kartogrammi)
 
-kartta <- function(df, aluejako="pono.3", title.label=NA, geo_=geo, color.map="OrRd", color.limits=c(NA,NA)) {
+kartta <- function(df, aluejako="pono.3", title.label=NA, geo_=geo, color.map="PuBu", color.limits=c(NA,NA)) {
   # yhdistää kartan ja datan; plottaa ensimmäisen muuttujan jonka nimi ei ole "alue" 
   geodata <- list()
   geodata[["pono.5"]] <- function(geo_) mutate(geo_$pono.duukkis, alue=pono) 
@@ -52,18 +52,18 @@ kartta <- function(df, aluejako="pono.3", title.label=NA, geo_=geo, color.map="O
   
   attr=names(select(df, -alue))[1] 
   if(is.na(title.label)) title.label <- attr
-  
   p <- ggplot(data=arrange(geodata, order), aes(x=long, y=lat))+ 
     geom_polygon_interactive(aes_string(fill = attr, group="group", tooltip = "alue"), 
                              colour=NA)+
-    scale_fill_gradientn(colours= brewer.pal(9,color.map), 
-                         values = NULL, 
-                         space = "Lab", 
-                         na.value = "grey50", 
-                         guide = "colourbar", 
-                         limits=color.limits)+
     theme_void()+theme(legend.title=element_blank())+ggtitle(title.label)
   
+    p <- p + scale_fill_gradientn(colours= brewer.pal(9,color.map), 
+                                  values = NULL, 
+                                  space = "Lab", 
+                                  na.value = "grey50", 
+                                  guide = "colourbar", 
+                                  limits = color.limits)
+
   if(!grepl("^pono",aluejako)) 
     p<-p+coord_equal(ratio=1) 
   else 
@@ -71,7 +71,7 @@ kartta <- function(df, aluejako="pono.3", title.label=NA, geo_=geo, color.map="O
   return(p)
 }
 
-kartta.animaatio <- function(df, aluejako="pono.3", geo_=geo, color.map="OrRd", title.label=NA) {
+kartta.animaatio <- function(df, aluejako="pono.3", geo_=geo, color.map="PuBu", title.label=NA) {
   # yhdistää kartan ja datan; plottaa ensimmäisen muuttujan, ei muita
   
   geodata <- list()

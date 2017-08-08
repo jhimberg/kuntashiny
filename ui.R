@@ -14,12 +14,13 @@ navbarPage("Kuntatilastoja",
                             choices = karttatyyppi$label, selected=karttatyyppi$label[1]),
                wellPanel("Kartogrammi painottaa kunnan pinta-alaa vuoden 2016 asukasmäärällä"),
                br(),
-               h3("Koko maan keskiarvo"),
-               plotOutput("koko.maa")
+               h3("Koko maa"),
+               plotOutput("kokomaa")
              ),
              mainPanel(
                ggiraphOutput("kartta", height="1200px"),
-               "Data: Tilastokeskus, https://pxnet2.stat.fi/PXWeb/Resources/PX/Databases/Kuntien_avainluvut/2017/kuntien_avainluvut_2017_aikasarja.px"
+               "Data: Tilastokeskus, pxnet2.stat.fi/PXWeb/Resources/PX/Databases/Kuntien_avainluvut/2017/kuntien_avainluvut_2017_aikasarja.px, ",
+               ""
              )
            )),
            tabPanel("GIF-animaatio",

@@ -1,7 +1,7 @@
 
 function(input, output, session) {
   
-  output$koko.maa <-renderPlot({
+  output$kokomaa <-renderPlot({
     g<-koko.maa[, c("vuosi",input$muuttuja)]
     names(g)[2]<-"x" 
     g<- g[!is.na(g$x),]
