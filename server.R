@@ -9,7 +9,7 @@ function(input, output, session) {
     vuosi.limits <- c(min(g$vuosi, na.rm=TRUE), max(g$vuosi, na.rm=TRUE))
     p<-ggplot(g, aes(x=vuosi,y=x))+geom_line()+coord_cartesian(xlim=vuosi.limits)+
       coord_cartesian(ylim=color.limits)+
-      ggtitle("Koko maan keskiarvo")+
+      ggtitle("Aikasarja")+
       ylab(input$muuttuja)
     p
   })
