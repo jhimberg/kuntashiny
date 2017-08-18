@@ -53,11 +53,12 @@ kartta <- function(df, aluejako="pono.3", title.label=NA, geo_=geo, color.map="P
   attr=names(select(df, -alue))[1] 
   if(is.na(title.label)) title.label <- attr
   p <- ggplot(data=arrange(geodata, order), aes(x=long, y=lat))+ 
-    geom_polygon_interactive(aes_string(fill = attr, group="group", tooltip = "alue"), 
+    geom_polygon_interactive(aes_string(fill = attr, group="group", tooltip = "alue", 
+                                        data_id="alue"), 
                              colour=NA)+
     theme_void()+theme(legend.title=element_blank())+ggtitle(title.label)
   
-    p <- p + scale_fill_gradientn(colours= brewer.pal(9,color.map), 
+    p <- p + scale_fill_gradientn(colours= brewer.pal(6,color.map), 
                                   values = NULL, 
                                   space = "Lab", 
                                   na.value = "grey50", 
@@ -87,8 +88,8 @@ kartta.animaatio <- function(df, aluejako="pono.3", geo_=geo, color.map="PuBu", 
   if(is.na(title.label)) title.label <- attr
   
   p <-ggplot(data=arrange(geodata,order), aes(x=long, y=lat, frame=aika))+ 
-    geom_polygon_interactive(aes_string(fill=attr, group="group", tooltip="alue"), colour=NA)+
-    scale_fill_gradientn(colours= brewer.pal(9,color.map), values = NULL, space = "Lab", na.value = "grey50", 
+    geom_polygon_interactive(aes_string(fill=attr, group="group", tooltip="alue", data_id = "alue"), colour=NA)+
+    scale_fill_gradientn(colours= brewer.pal(6,color.map), values = NULL, space = "Lab", na.value = "grey50", 
                          guide = "colourbar") + theme_void() +
     theme(legend.title=element_blank()) + ggtitle(title.label) 
   return(p)
