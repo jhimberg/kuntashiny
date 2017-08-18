@@ -5,12 +5,17 @@ function(input, output, session) {
     g<-koko.maa[, c("vuosi",input$muuttuja)]
     names(g)[2]<-"x" 
     g<- g[!is.na(g$x),]
+    
+    h<-kuntadata[kuntadata$kuntanimi %in% input$kartta_selected, c("kuntanimi",input$muuttuja,"vuosi")]
+    names(h)[2]<-"x" 
+    
     color.limits <- c(min(c(kuntadata[, input$muuttuja], g$x), na.rm=TRUE), max(c(kuntadata[, input$muuttuja],g$x), na.rm=TRUE))
     vuosi.limits <- c(min(g$vuosi, na.rm=TRUE), max(g$vuosi, na.rm=TRUE))
-    p<-ggplot(g, aes(x=vuosi,y=x))+geom_line()+coord_cartesian(xlim=vuosi.limits)+
-      coord_cartesian(ylim=color.limits)+
+    p<-ggplot(g, aes(x=vuosi,y=x))+geom_line(color="dodgerblue3",size=2.5)+
+      coord_cartesian(xlim=vuosi.limits, ylim=color.limits)+
       ggtitle("Aikasarja")+
       ylab(input$muuttuja)
+    p<-p+geom_line(data=h,aes(x=vuosi,y=x,group=kuntanimi,color=kuntanimi))
     p
   })
   
@@ -43,7 +48,7 @@ function(input, output, session) {
   
   karttaData<-reactive({g <- kuntadata[c("vuosi", "kuntanimi", input$muuttuja)]
   names(g) <- c("vuosi","alue","x")
-  color.limits<-c(min(g["x"], na.rm=TRUE), max(g["x"],na.rm=TRUE))
+  color.limits<-c(min(g$x, na.rm=TRUE), max(g$x, na.rm=TRUE))
   g <- filter(g, !is.na(x) & vuosi == input$vuosi) 
   p <- kartta(select(g, x, alue), 
               title.label = paste(input$muuttuja,input$vuosi, sep=", "),
