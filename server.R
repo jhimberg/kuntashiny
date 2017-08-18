@@ -1,7 +1,7 @@
 
 function(input, output, session) {
   
-  output$kokomaa <-renderPlot({
+  output$aikasarja <-renderPlot({
     g<-koko.maa[, c("vuosi",input$muuttuja)]
     names(g)[2]<-"x" 
     g<- g[!is.na(g$x),]
@@ -13,7 +13,7 @@ function(input, output, session) {
     vuosi.limits <- c(min(g$vuosi, na.rm=TRUE), max(g$vuosi, na.rm=TRUE))
     p<-ggplot(g, aes(x=vuosi,y=x))+geom_line(color="dodgerblue3",size=2.5)+
       coord_cartesian(xlim=vuosi.limits, ylim=color.limits)+
-      ggtitle("Aikasarja")+
+      ggtitle("Koko maan keskiarvo: vahvennettu sininen käyrä")+
       ylab(input$muuttuja)
     p<-p+geom_line(data=h,aes(x=vuosi,y=x,group=kuntanimi,color=kuntanimi))
     p
@@ -65,6 +65,8 @@ function(input, output, session) {
   
   output$kartta <- renderggiraph({
     ggiraph(code={print(karttaData())}, 
-            tooltip_extra_css="background-color:white", tooltip_opacity=.9)
+            tooltip_extra_css="background-color:white", tooltip_opacity=.9,
+            selection_type = "multiple"
+            )
     })
   }

@@ -27,8 +27,8 @@ shinyUI (navbarPage(
           "Kartogrammi painottaa kunnan pinta-alaa vuoden 2016 asukasmäärällä"
         ),
         br(),
-        h3("Koko maa"),
-        plotOutput("kokomaa")
+        h3("Koko aikasarja"),
+        plotOutput("aikasarja")
       ),
       mainPanel(
         ggiraphOutput("kartta", height = "1200px"),
