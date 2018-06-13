@@ -27,7 +27,6 @@ function(input, output, session) {
     
   })
   
- 
   karttaData<-reactive({g <- kuntadata[c("vuosi", "kuntanimi", input$muuttuja)]
   names(g) <- c("vuosi","alue","x")
   color.limits<-c(min(g$x, na.rm=TRUE), max(g$x, na.rm=TRUE))
@@ -39,12 +38,7 @@ function(input, output, session) {
                                          karttatyyppi$label, 
                                          karttatyyppi$aluejako, warn_missing = F))})
   
-  karttaGIFData<-reactive({g <- kuntadata[c("vuosi", "kuntanimi", input$muuttuja)]
-  g <- kuntadata[c("vuosi", "kuntanimi", input$muuttujavideo)]
-  names(g) <- c("aika","alue","x")
-  g <- filter(g, !is.na(x)) 
-  })
-  
+
   output$kartta <- renderggiraph({
     ggiraph(code={print(karttaData())}, 
             tooltip_extra_css="background-color:white", tooltip_opacity=.9,
