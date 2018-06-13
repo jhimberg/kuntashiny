@@ -27,25 +27,7 @@ function(input, output, session) {
     
   })
   
-  output$karttavideo <- renderImage({
-    
-    outfile <- tempfile(fileext='.gif')
-    
-    p <- kartta.animaatio(karttaGIFData(), title.label=input$muuttujavideo, 
-                aluejako=plyr::mapvalues(input$karttatyyppivideo, 
-                                         karttatyyppi$label, 
-                                         karttatyyppi$aluejako, warn_missing = F))
-    ani.options(interval=0.5, ani.width=500, ani.height=650)
-    gganimate(p, file="outfile.gif")
-    
-    # Return a list containing the filename
-    
-    list(src = "outfile.gif",
-         contentType = 'image/gif',
-         height="800px",
-         alt = "Tää on rikki"
-    )}, deleteFile = TRUE)
-  
+ 
   karttaData<-reactive({g <- kuntadata[c("vuosi", "kuntanimi", input$muuttuja)]
   names(g) <- c("vuosi","alue","x")
   color.limits<-c(min(g$x, na.rm=TRUE), max(g$x, na.rm=TRUE))

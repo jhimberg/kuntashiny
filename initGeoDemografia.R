@@ -1,5 +1,5 @@
 
-working.directory<-"."
+working.directory <- "."
 setwd(working.directory)
 
 # Kunnat v. 2017
@@ -18,7 +18,7 @@ is.ahvenanmaa <-function(v)  ifelse(v %in% c("Sottunga","Föglö", "Kumlinge", "
                                       grepl("^22",v),T,F)
 
 # korvataan low-arvoa pienemmät "repvaluella"
-limitl<-function(x,low,repvalue){ 
+limitl <- function(x,low,repvalue){ 
   x[x<low & !is.na(x)]<-repvalue;
   return(x);
 }
@@ -40,7 +40,7 @@ nvl <- function(a,b) {
   ifelse(is.na(a),b,a)
 }
 
-kunnat.latlong<-read.csv(file="Data/kunnat_latlong.csv",sep="\t")
+kunnat.latlong <- read.csv(file="Data/kunnat_latlong.csv",sep="\t")
 
 map.vanhat.kuntanimet<-
   function(v) plyr::mapvalues(v,c("Maarianhamina - Mariehamn","Pedersören kunta","Koski Tl"), 

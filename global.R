@@ -9,11 +9,9 @@ library(gpclib)
 library(maptools)
 gpclibPermit()
 
-library(gisfin)
 library(gdata)
 library(RColorBrewer)
 library(animation)
-library(gganimate)
 library(ggiraph)
 
 source("initGeoDemografia.R")
@@ -103,6 +101,7 @@ kuntadata <- mutate(demografia$kunta$tunnusluku,
 koko.maa <- filter(demografia$kunta$tunnusluku, kuntanimi=="KOKO MAA") 
 
 kunta.stat.vars <- names(select(demografia$kunta$tunnusluku,-vuosi,-kuntanimi))
+
 vuodet <- unique(demografia$kunta$tunnusluku$vuosi)
 karttatyyppi=list(label=c("tavallinen","kartogrammi"), 
                   aluejako=c("kuntanimi","kartogrammi.kuntanimi"))
